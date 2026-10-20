@@ -32,6 +32,7 @@ namespace MarbleSync.Gameplay
         [SerializeField] private MarbleLane[] lanes = Array.Empty<MarbleLane>();
         [SerializeField] private Vector3 seesawStart = Vector3.zero;
         [SerializeField] private Vector3 seesawDirection = new Vector3(1f, -0.12f, 0f);
+        [SerializeField] private float seesawLaneSpacing = 0.85f;
 
         [Header("Slope -> acceleration")]
         [SerializeField] private float baseAcceleration = 3f;
@@ -54,6 +55,20 @@ namespace MarbleSync.Gameplay
         public SimTuning Tuning => tuning;
         public Vector3 SeesawStart => seesawStart;
         public Vector3 SeesawEnd => seesawStart + seesawDirection.normalized * tuning.SeesawLength;
+        public Vector3 SeesawDirection => seesawDirection.normalized;
+        public float SeesawLaneSpacing => seesawLaneSpacing;
+
+        /// <summary>Horizontal axis across the seesaw; each marble has its own parallel track on it.</summary>
+        public Vector3 SeesawLateral => Vector3.Cross(seesawDirection, Vector3.up).normalized;
+
+        public float SeesawLaneOffset(int lane) => (lane - (lanes.Length - 1) * 0.5f) * seesawLaneSpacing;
+
+        public Vector3 SeesawLaneStart(int lane) => seesawStart + SeesawLateral * SeesawLaneOffset(lane);
+
+        public Vector3 SeesawLaneEnd(int lane) => SeesawLaneStart(lane) + SeesawDirection * tuning.SeesawLength;
+
+        /// <summary>Total width needed to hold one track per marble.</summary>
+        public float SeesawWidth => lanes.Length * seesawLaneSpacing;
 
         public MarbleLane Lane(int index) => lanes[index];
 
@@ -74,7 +89,7 @@ namespace MarbleSync.Gameplay
 
         /// <summary>Editor-only authoring entry point used by the level generator.</summary>
         public void Author(string id, string title, int levelVersion, string intro, string hint, int sponges,
-            bool timers, MarbleLane[] marbleLanes, Vector3 start, Vector3 direction, SimTuning simTuning)
+            bool timers, MarbleLane[] marbleLanes, Vector3 start, Vector3 direction, float laneSpacing, SimTuning simTuning)
         {
             levelId = id;
             displayName = title;
@@ -86,6 +101,7 @@ namespace MarbleSync.Gameplay
             lanes = marbleLanes;
             seesawStart = start;
             seesawDirection = direction;
+            seesawLaneSpacing = laneSpacing;
             tuning = simTuning;
             _simDef = null;
             _paths = null;
@@ -118,9 +134,9 @@ namespace MarbleSync.Gameplay
                 {
                     throw new InvalidOperationException($"Level {levelId} lane {l} needs at least 2 waypoints.");
                 }
-                if ((lane.Waypoints[lane.Waypoints.Length - 1] - seesawStart).sqrMagnitude > 0.0001f)
+                if ((lane.Waypoints[lane.Waypoints.Length - 1] - SeesawLaneStart(l)).sqrMagnitude > 0.0001f)
                 {
-                    throw new InvalidOperationException($"Level {levelId} lane {l} must end at the seesaw start.");
+                    throw new InvalidOperationException($"Level {levelId} lane {l} must end at the start of its seesaw track.");
                 }
 
                 var path = new TrackPath(lane.Waypoints);

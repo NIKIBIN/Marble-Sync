@@ -26,7 +26,7 @@ MonoBehaviour:
     - {x: -20, y: 5, z: -1}
     - {x: -10, y: 2.5, z: -1}
     - {x: -6, y: 0.9, z: -1}
-    - {x: 0, y: 0, z: 0}
+    - {x: 0, y: 0, z: -0.425}
     Elements:
     - Kind: 5
       Distance: 1.5461646
@@ -39,7 +39,7 @@ MonoBehaviour:
     - {x: -18, y: 4.5, z: 1}
     - {x: -10, y: 2.5, z: 1}
     - {x: -6, y: 0.9, z: 1}
-    - {x: 0, y: 0, z: 0}
+    - {x: 0, y: 0, z: 0.425}
     Elements:
     - Kind: 4
       Distance: 4.9477267
@@ -48,6 +48,7 @@ MonoBehaviour:
       StartsActive: 1
   seesawStart: {x: 0, y: 0, z: 0}
   seesawDirection: {x: 1, y: -0.15, z: 0}
+  seesawLaneSpacing: 0.85
   baseAcceleration: 3
   accelerationPerDrop: 10
   curveAngleThreshold: 60

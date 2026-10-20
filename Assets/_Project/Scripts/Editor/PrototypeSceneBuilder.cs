@@ -52,7 +52,7 @@ namespace MarbleSync.EditorTools
             LevelLibrary library = AssetDatabase.LoadAssetAtPath<LevelLibrary>(LevelGenerator.LibraryPath);
 
             var mats = new Materials();
-            Renderer trackPiece = BuildTrackPiecePrefab(mats);
+            HalfPipeView halfPipe = BuildHalfPipePrefab(mats);
             MarbleView marble = BuildMarblePrefab(mats, false);
             MarbleView ghost = BuildMarblePrefab(mats, true);
             ElementView element = BuildElementPrefab(mats);
@@ -94,11 +94,11 @@ namespace MarbleSync.EditorTools
             var trackGo = new GameObject("Track");
             trackGo.transform.SetParent(game.transform);
             var trackView = trackGo.AddComponent<TrackView>();
-            Transform pieces = Child(trackGo.transform, "Pieces");
+            Transform pipes = Child(trackGo.transform, "Pipes");
             Transform elements = Child(trackGo.transform, "Elements");
-            Wire(trackView, "trackPiecePrefab", trackPiece);
+            Wire(trackView, "pipePrefab", halfPipe);
             Wire(trackView, "elementPrefab", element);
-            Wire(trackView, "pieceContainer", pieces);
+            Wire(trackView, "pipeContainer", pipes);
             Wire(trackView, "elementContainer", elements);
 
             MarbleSetView marbles = BuildMarbleSet(game.transform, "Marbles", marble, false);
@@ -109,7 +109,7 @@ namespace MarbleSync.EditorTools
             Wire(controller, "marbles", marbles);
             Wire(controller, "ghostMarbles", ghosts);
 
-            SeesawView seesaw = BuildSeesaw(game.transform, controller, mats);
+            SeesawView seesaw = BuildSeesaw(game.transform, controller, trackView, halfPipe, mats);
 
             // Juice
             var audioGo = new GameObject("Audio");
@@ -154,7 +154,7 @@ namespace MarbleSync.EditorTools
 
         private sealed class Materials
         {
-            public readonly Material Track = Lit("Track", new Color(0.78f, 0.74f, 0.68f), 0.2f);
+            public readonly Material Track = Lit("Track", new Color(0.86f, 0.84f, 0.8f), 0.65f);
             public readonly Material Marble = Lit("Marble", Color.white, 0.85f, emission: true);
             public readonly Material Shell = Transparent("MarbleShell", new Color(1f, 1f, 1f, 0.5f), 0.95f);
             public readonly Material Ghost = Transparent("GhostMarble", new Color(1f, 1f, 1f, 0.35f), 0.6f);
@@ -162,7 +162,6 @@ namespace MarbleSync.EditorTools
             public readonly Material Puddle = Lit("Puddle", Color.white, 0.95f, emission: true);
             public readonly Material Logic = Lit("LogicPart", Color.white, 0.5f, emission: true);
             public readonly Material Metal = Lit("Metal", new Color(0.35f, 0.37f, 0.4f), 0.7f, metallic: 0.8f);
-            public readonly Material Corner = Lit("CurveCorner", new Color(0.45f, 0.42f, 0.38f), 0.2f);
             public readonly Material Wood = Lit("SeesawWood", new Color(0.72f, 0.5f, 0.3f), 0.3f);
             public readonly Material Marker = Unlit("HalfMarker", new Color(1f, 0.9f, 0.3f));
             public readonly Material Ring = Unlit("SelectionRing", new Color(1f, 1f, 1f));
@@ -236,13 +235,16 @@ namespace MarbleSync.EditorTools
 
         // ------------------------------------------------------------ prefabs
 
-        private static Renderer BuildTrackPiecePrefab(Materials mats)
+        private static HalfPipeView BuildHalfPipePrefab(Materials mats)
         {
-            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            go.name = "TrackPiece";
-            Object.DestroyImmediate(go.GetComponent<Collider>());
-            go.GetComponent<Renderer>().sharedMaterial = mats.Track;
-            return SavePrefab(go, "TrackPiece").GetComponent<Renderer>();
+            var go = new GameObject("HalfPipe");
+            var filter = go.AddComponent<MeshFilter>();
+            var renderer = go.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = mats.Track;
+            var view = go.AddComponent<HalfPipeView>();
+            Wire(view, "meshFilter", filter);
+            Wire(view, "meshRenderer", renderer);
+            return SavePrefab(go, "HalfPipe").GetComponent<HalfPipeView>();
         }
 
         private static MarbleView BuildMarblePrefab(Materials mats, bool ghost)
@@ -293,9 +295,10 @@ namespace MarbleSync.EditorTools
             collider.center = new Vector3(0f, 0.3f, 0f);
             var click = root.AddComponent<ClickTarget>();
 
-            GameObject puddle = Primitive(PrimitiveType.Cylinder, "Puddle", root.transform, mats.Puddle);
+            // A flat block whose sides hide inside the pipe wall: reads as liquid pooled in the channel.
+            GameObject puddle = Primitive(PrimitiveType.Cube, "Puddle", root.transform, mats.Puddle);
             puddle.transform.localPosition = new Vector3(0f, 0.03f, 0f);
-            puddle.transform.localScale = new Vector3(0.62f, 0.01f, 1.1f);
+            puddle.transform.localScale = new Vector3(0.44f, 0.1f, 0.9f);
 
             var flameRoot = new GameObject("Flamethrower");
             flameRoot.transform.SetParent(root.transform, false);
@@ -316,15 +319,11 @@ namespace MarbleSync.EditorTools
             door.transform.localPosition = new Vector3(0f, 0.35f, 0f);
 
             GameObject button = Primitive(PrimitiveType.Cylinder, "Button", root.transform, mats.Logic);
-            button.transform.localPosition = new Vector3(0f, 0.03f, 0f);
+            button.transform.localPosition = new Vector3(0f, 0.02f, 0f);
 
-            GameObject sensor = Primitive(PrimitiveType.Cylinder, "Sensor", root.transform, mats.Logic);
-            sensor.transform.localPosition = new Vector3(0f, 0.35f, 0f);
-            sensor.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-
-            GameObject corner = Primitive(PrimitiveType.Cube, "CurveCorner", root.transform, mats.Corner);
-            corner.transform.localPosition = new Vector3(0f, 0.02f, 0f);
-            corner.transform.localScale = new Vector3(0.7f, 0.04f, 0.7f);
+            // Sensor: a light bar spanning the top of the half-pipe.
+            GameObject sensor = Primitive(PrimitiveType.Cube, "Sensor", root.transform, mats.Logic);
+            sensor.transform.localPosition = new Vector3(0f, 0.72f, 0f);
 
             var labelGo = new GameObject("Label");
             labelGo.transform.SetParent(root.transform, false);
@@ -350,7 +349,6 @@ namespace MarbleSync.EditorTools
             Wire(view, "doorRenderer", door.GetComponent<Renderer>());
             Wire(view, "buttonRenderer", button.GetComponent<Renderer>());
             Wire(view, "sensorRenderer", sensor.GetComponent<Renderer>());
-            Wire(view, "curveRenderer", corner.GetComponent<Renderer>());
             Wire(view, "label", label);
             return SavePrefab(root, "Element").GetComponent<ElementView>();
         }
@@ -367,18 +365,24 @@ namespace MarbleSync.EditorTools
             return set;
         }
 
-        private static SeesawView BuildSeesaw(Transform parent, AttemptController controller, Materials mats)
+        private static SeesawView BuildSeesaw(Transform parent, AttemptController controller, TrackView trackView, HalfPipeView pipePrefab, Materials mats)
         {
             var go = new GameObject("Seesaw");
             go.transform.SetParent(parent);
             var view = go.AddComponent<SeesawView>();
-            GameObject plank = Primitive(PrimitiveType.Cube, "Plank", go.transform, mats.Wood);
-            GameObject half = Primitive(PrimitiveType.Cube, "HalfMarker", plank.transform, mats.Marker);
+            Transform deck = Child(go.transform, "Deck");
+            GameObject plank = Primitive(PrimitiveType.Cube, "Plank", deck, mats.Wood);
+            Transform lanes = Child(deck, "Tracks");
+            GameObject half = Primitive(PrimitiveType.Cube, "HalfMarker", deck, mats.Marker);
             GameObject gate = Primitive(PrimitiveType.Cube, "Gate", go.transform, mats.Metal);
             GameObject fulcrum = Primitive(PrimitiveType.Cylinder, "Fulcrum", go.transform, mats.Metal);
             fulcrum.transform.localScale = new Vector3(0.5f, 0.6f, 0.5f);
 
             Wire(view, "controller", controller);
+            Wire(view, "trackView", trackView);
+            Wire(view, "deck", deck);
+            Wire(view, "laneRoot", lanes);
+            Wire(view, "pipePrefab", pipePrefab);
             Wire(view, "plank", plank.transform);
             Wire(view, "gate", gate.transform);
             Wire(view, "halfMarker", half.transform);

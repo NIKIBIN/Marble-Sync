@@ -30,7 +30,7 @@ MonoBehaviour:
     - {x: -14, y: 3.6999998, z: -4}
     - {x: -10, y: 2.6999998, z: -4}
     - {x: -6, y: 0.9, z: -4}
-    - {x: 0, y: 0, z: 0}
+    - {x: 0, y: 0, z: -1.7}
     Elements: []
   - MarbleName: Vermelha
     MarbleColor: {r: 1, g: 0.25, b: 0.2, a: 1}
@@ -38,7 +38,7 @@ MonoBehaviour:
     - {x: -18, y: 5, z: -2}
     - {x: -10, y: 2.5, z: -2}
     - {x: -6, y: 0.9, z: -2}
-    - {x: 0, y: 0, z: 0}
+    - {x: 0, y: 0, z: -0.85}
     Elements: []
   - MarbleName: Verde
     MarbleColor: {r: 0.25, g: 0.8, b: 0.3, a: 1}
@@ -65,7 +65,7 @@ MonoBehaviour:
     - {x: -12, y: 2.2, z: 2}
     - {x: -10, y: 1.6, z: 2}
     - {x: -6, y: 0.9, z: 2}
-    - {x: 0, y: 0, z: 0}
+    - {x: 0, y: 0, z: 0.85}
     Elements: []
   - MarbleName: Roxa
     MarbleColor: {r: 0.65, g: 0.3, b: 0.9, a: 1}
@@ -74,10 +74,11 @@ MonoBehaviour:
     - {x: -14, y: 5, z: 4}
     - {x: -10, y: 3.5, z: 4}
     - {x: -6, y: 0.9, z: 4}
-    - {x: 0, y: 0, z: 0}
+    - {x: 0, y: 0, z: 1.7}
     Elements: []
   seesawStart: {x: 0, y: 0, z: 0}
   seesawDirection: {x: 1, y: -0.15, z: 0}
+  seesawLaneSpacing: 0.85
   baseAcceleration: 3
   accelerationPerDrop: 10
   curveAngleThreshold: 60

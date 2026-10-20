@@ -19,6 +19,7 @@ namespace MarbleSync.EditorTools
         private static readonly Vector3 SeesawStart = Vector3.zero;
         private static readonly Vector3 SeesawDirection = new Vector3(1f, -0.15f, 0f);
         private const float ApproachX = -6f;
+        private const float SeesawLaneSpacing = 0.85f;
         private const float ApproachY = 0.9f;
 
         private static readonly (string name, Color color)[] Marbles =
@@ -69,7 +70,7 @@ namespace MarbleSync.EditorTools
             return new LaneSpec { Marble = marble, Start = new Vector3(x, y, z), Moves = moves, Places = places };
         }
 
-        private static MarbleLane BuildLane(LaneSpec spec)
+        private static MarbleLane BuildLane(LaneSpec spec, int laneIndex, int laneCount)
         {
             var points = new List<Vector3> { spec.Start };
             Vector3 p = spec.Start;
@@ -89,7 +90,9 @@ namespace MarbleSync.EditorTools
             }
 
             points.Add(new Vector3(ApproachX, ApproachY, spec.Start.z));
-            points.Add(SeesawStart);
+            // Every marble gets its own parallel track on the seesaw.
+            Vector3 lateral = Vector3.Cross(SeesawDirection, Vector3.up).normalized;
+            points.Add(SeesawStart + lateral * ((laneIndex - (laneCount - 1) * 0.5f) * SeesawLaneSpacing));
 
             var path = new TrackPath(points.ToArray());
             var elements = new ElementDef[spec.Places.Length];
@@ -291,7 +294,7 @@ namespace MarbleSync.EditorTools
                 var lanes = new MarbleLane[spec.Lanes.Length];
                 for (int i = 0; i < lanes.Length; i++)
                 {
-                    lanes[i] = BuildLane(spec.Lanes[i]);
+                    lanes[i] = BuildLane(spec.Lanes[i], i, lanes.Length);
                 }
 
                 string path = $"{LevelFolder}/Level_{spec.Id}.asset";
@@ -302,10 +305,10 @@ namespace MarbleSync.EditorTools
                     level = ScriptableObject.CreateInstance<LevelDefinition>();
                 }
 
-                level.Author(spec.Id, spec.Title, 1, spec.Intro, string.Empty, spec.Sponges, spec.Timers, lanes, SeesawStart, SeesawDirection, Tuning());
+                level.Author(spec.Id, spec.Title, 1, spec.Intro, string.Empty, spec.Sponges, spec.Timers, lanes, SeesawStart, SeesawDirection, SeesawLaneSpacing, Tuning());
                 LevelSolver.Solution solution = LevelSolver.Solve(level.SimDef);
                 string hint = spec.Timers ? BuildHint(level, solution) : string.Empty;
-                level.Author(spec.Id, spec.Title, 1, spec.Intro, hint, spec.Sponges, spec.Timers, lanes, SeesawStart, SeesawDirection, Tuning());
+                level.Author(spec.Id, spec.Title, 1, spec.Intro, hint, spec.Sponges, spec.Timers, lanes, SeesawStart, SeesawDirection, SeesawLaneSpacing, Tuning());
 
                 if (created)
                 {

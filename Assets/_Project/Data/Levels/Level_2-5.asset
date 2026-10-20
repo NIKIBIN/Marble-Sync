@@ -30,7 +30,7 @@ MonoBehaviour:
     - {x: -12, y: 3.1999998, z: -4}
     - {x: -10, y: 2.6999998, z: -4}
     - {x: -6, y: 0.9, z: -4}
-    - {x: 0, y: 0, z: 0}
+    - {x: 0, y: 0, z: -1.7}
     Elements:
     - Kind: 1
       Distance: 1.2369317
@@ -48,7 +48,7 @@ MonoBehaviour:
     - {x: -20, y: 5, z: -2}
     - {x: -10, y: 2.5, z: -2}
     - {x: -6, y: 0.9, z: -2}
-    - {x: 0, y: 0, z: 0}
+    - {x: 0, y: 0, z: -0.85}
     Elements:
     - Kind: 2
       Distance: 3.0923293
@@ -83,7 +83,7 @@ MonoBehaviour:
     - {x: -18, y: 4.5, z: 2}
     - {x: -10, y: 2.5, z: 2}
     - {x: -6, y: 0.9, z: 2}
-    - {x: 0, y: 0, z: 0}
+    - {x: 0, y: 0, z: 0.85}
     Elements:
     - Kind: 2
       Distance: 1.6492423
@@ -105,7 +105,7 @@ MonoBehaviour:
     - {x: -10, y: 3.3999999, z: 4}
     - {x: -8, y: 2.8999999, z: 4}
     - {x: -6, y: 0.9, z: 4}
-    - {x: 0, y: 0, z: 0}
+    - {x: 0, y: 0, z: 1.7}
     Elements:
     - Kind: 2
       Distance: 0.82462114
@@ -124,6 +124,7 @@ MonoBehaviour:
       StartsActive: 1
   seesawStart: {x: 0, y: 0, z: 0}
   seesawDirection: {x: 1, y: -0.15, z: 0}
+  seesawLaneSpacing: 0.85
   baseAcceleration: 3
   accelerationPerDrop: 10
   curveAngleThreshold: 60

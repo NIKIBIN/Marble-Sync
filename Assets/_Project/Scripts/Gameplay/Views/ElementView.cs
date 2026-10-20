@@ -23,7 +23,6 @@ namespace MarbleSync.Gameplay
         [SerializeField] private Renderer doorRenderer;
         [SerializeField] private Renderer buttonRenderer;
         [SerializeField] private Renderer sensorRenderer;
-        [SerializeField] private Renderer curveRenderer;
         [SerializeField] private TextMesh label;
         [Tooltip("Labels face the fixed gameplay camera angle.")]
         [SerializeField] private Vector3 labelEuler = new Vector3(42f, -18f, 0f);
@@ -66,7 +65,7 @@ namespace MarbleSync.Gameplay
             doorPanel.gameObject.SetActive(def.Kind == ElementKind.Door);
             buttonRenderer.gameObject.SetActive(def.Kind == ElementKind.Button);
             sensorRenderer.gameObject.SetActive(def.Kind == ElementKind.Sensor);
-            curveRenderer.gameObject.SetActive(def.Kind == ElementKind.Curve);
+            // Square curves need no marker: the half-pipe corner shows them.
             label.gameObject.SetActive(def.Kind == ElementKind.Sensor || def.Kind == ElementKind.Button);
 
             clickTarget.BindElement(lane, index);
@@ -131,8 +130,8 @@ namespace MarbleSync.Gameplay
 
             _pulse = Mathf.MoveTowards(_pulse, 0f, Time.deltaTime * 3f);
             float scale = 1f + _pulse * 0.4f;
-            buttonRenderer.transform.localScale = new Vector3(0.5f * scale, 0.05f, 0.5f * scale);
-            sensorRenderer.transform.localScale = new Vector3(0.7f * scale, 0.03f, 0.7f * scale);
+            buttonRenderer.transform.localScale = new Vector3(0.26f * scale, 0.03f, 0.26f * scale);
+            sensorRenderer.transform.localScale = new Vector3(0.95f * scale, 0.06f, 0.06f);
         }
 
         private Color GetLogicColor(LogicColor color) => logicColors[(int)color];

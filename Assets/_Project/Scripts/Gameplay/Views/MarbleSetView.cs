@@ -107,7 +107,7 @@ namespace MarbleSync.Gameplay
             if (m.Status == MarbleStatus.OnSeesaw || m.Status == MarbleStatus.Arrived)
             {
                 float t = Mathf.Clamp01(m.SeesawPos / _level.Tuning.SeesawLength);
-                return Vector3.Lerp(_level.SeesawStart, _level.SeesawEnd, t);
+                return Vector3.Lerp(_level.SeesawLaneStart(i), _level.SeesawLaneEnd(i), t);
             }
             return _level.Path(i).Evaluate(m.Distance);
         }
