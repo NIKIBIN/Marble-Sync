@@ -34,3 +34,12 @@ Fonte de design: [`GDD - Marble Sync.md`](../GDD%20-%20Marble%20Sync.md).
 - O HUD não mostra instruções nem tempos (sem diferença em segundos, sem atraso em segundos, histórico só com ✓/✗).
 - Reiniciar é instantâneo quando a tentativa já acabou ou já está perdida; segurar só é exigido no meio de uma tentativa viva.
 - Painéis do HUD não bloqueiam mais cliques nas bolinhas.
+
+## Juice 1 (2026-10-20)
+
+- Partículas por script (gotas, faíscas, fumaça/vapor, confete) em `FxPlayer`: respingo na cor da poça, faísca nas curvas, fogo contínuo na bolinha em chamas, vapor ao apagar/evaporar, gosma ao derreter, açúcar ao caramelizar, anel colorido no botão, poeira ao fechar a gangorra, confete nas cores das bolinhas no sucesso.
+- Bolinhas com rastro na cor delas, squash-and-stretch ao soltar, curva, entrada e chegada, "respiração" enquanto esperam o clique e gotejamento conforme o revestimento.
+- Superfície da poça balança depois que a bolinha passa.
+- Sons novos sintetizados: mel ("blub"), óleo, água com gotas, vapor, estalo de caramelo, "toc" de curva mais agudo quanto mais rápido, tilintar de chegada, arpejo de vitória; rolagem contínua por bolinha com volume e tom pela velocidade; pitch levemente aleatório e mais grave na câmera lenta.
+- Um único "tranco" curto de câmera ao fechar a gangorra e no sucesso (`GameCamera.punchEnabled` desliga).
+- Banner de resultado e botão "Próxima fase" entram com animação elástica.

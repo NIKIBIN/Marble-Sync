@@ -18,6 +18,18 @@ namespace MarbleSync.Gameplay
         private float _distance = 10f;
         private Vector3 _centerVelocity;
         private float _distanceVelocity;
+        private float _punch;
+
+        [Tooltip("Short, single camera kick on big moments (seesaw closing, success). Not a continuous shake.")]
+        [SerializeField] private bool punchEnabled = true;
+
+        public void Punch(float strength)
+        {
+            if (punchEnabled)
+            {
+                _punch = Mathf.Max(_punch, strength);
+            }
+        }
 
         public void Frame(Bounds bounds, bool instant)
         {
@@ -61,7 +73,9 @@ namespace MarbleSync.Gameplay
         private void Apply()
         {
             Quaternion rotation = Quaternion.Euler(viewEuler);
-            transform.SetPositionAndRotation(_center - rotation * Vector3.forward * _distance, rotation);
+            _punch = Mathf.MoveTowards(_punch, 0f, Time.unscaledDeltaTime * 1.2f);
+            Vector3 kick = rotation * new Vector3(0f, -_punch * Mathf.Sin(_punch * 60f), 0f) * (_distance * 0.02f);
+            transform.SetPositionAndRotation(_center - rotation * Vector3.forward * _distance + kick, rotation);
         }
     }
 }

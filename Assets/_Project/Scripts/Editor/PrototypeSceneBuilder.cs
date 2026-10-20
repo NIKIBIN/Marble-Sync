@@ -101,17 +101,7 @@ namespace MarbleSync.EditorTools
             Wire(trackView, "pipeContainer", pipes);
             Wire(trackView, "elementContainer", elements);
 
-            SeesawView seesaw = BuildSeesaw(game.transform, controller, trackView, halfPipe, mats);
-            MarbleSetView marbles = BuildMarbleSet(game.transform, "Marbles", marble, seesaw, false);
-            MarbleSetView ghosts = BuildMarbleSet(game.transform, "GhostMarbles", ghost, seesaw, true);
-
-            Wire(controller, "library", library);
-            Wire(controller, "trackView", trackView);
-            Wire(controller, "marbles", marbles);
-            Wire(controller, "ghostMarbles", ghosts);
-
-
-            // Juice
+            // Audio first: marbles take their rolling loop from it.
             var audioGo = new GameObject("Audio");
             audioGo.transform.SetParent(game.transform);
             var oneShots = audioGo.AddComponent<AudioSource>();
@@ -122,6 +112,29 @@ namespace MarbleSync.EditorTools
             Wire(sfx, "controller", controller);
             Wire(sfx, "oneShots", oneShots);
             Wire(sfx, "creakLoop", creak);
+
+            SeesawView seesaw = BuildSeesaw(game.transform, controller, trackView, halfPipe, mats);
+            MarbleSetView marbles = BuildMarbleSet(game.transform, "Marbles", marble, seesaw, sfx, false);
+            MarbleSetView ghosts = BuildMarbleSet(game.transform, "GhostMarbles", ghost, seesaw, sfx, true);
+
+            Wire(controller, "library", library);
+            Wire(controller, "trackView", trackView);
+            Wire(controller, "marbles", marbles);
+            Wire(controller, "ghostMarbles", ghosts);
+
+            // Particles
+            var fxGo = new GameObject("Fx");
+            fxGo.transform.SetParent(game.transform);
+            var fx = fxGo.AddComponent<FxPlayer>();
+            Wire(fx, "controller", controller);
+            Wire(fx, "trackView", trackView);
+            Wire(fx, "marbles", marbles);
+            Wire(fx, "seesaw", seesaw);
+            Wire(fx, "gameCamera", gameCamera);
+            Wire(fx, "droplets", MakeParticles(fxGo.transform, "Droplets", mats.ParticleAlpha, 1.8f, ParticleLook.Shrink));
+            Wire(fx, "sparks", MakeParticles(fxGo.transform, "Sparks", mats.ParticleAdd, -0.15f, ParticleLook.Shrink));
+            Wire(fx, "smoke", MakeParticles(fxGo.transform, "Smoke", mats.ParticleAlpha, -0.05f, ParticleLook.Grow));
+            Wire(fx, "confetti", MakeParticles(fxGo.transform, "Confetti", mats.Confetti, 0.55f, ParticleLook.Flutter));
 
             var tensionGo = new GameObject("TensionDirector");
             tensionGo.transform.SetParent(game.transform);
@@ -166,6 +179,99 @@ namespace MarbleSync.EditorTools
             public readonly Material Marker = Unlit("HalfMarker", new Color(1f, 0.9f, 0.3f));
             public readonly Material Ring = Unlit("SelectionRing", new Color(1f, 1f, 1f));
             public readonly Material Floor = Lit("Floor", new Color(0.22f, 0.24f, 0.28f), 0.1f);
+            public readonly Material ParticleAlpha = Particle("ParticleAlpha", additive: false, textured: true);
+            public readonly Material ParticleAdd = Particle("ParticleAdditive", additive: true, textured: true);
+            public readonly Material Confetti = Particle("Confetti", additive: false, textured: false);
+        }
+
+        private static Material Particle(string name, bool additive, bool textured)
+        {
+            Material mat = LoadOrCreate(name, Shader.Find("Universal Render Pipeline/Particles/Unlit"));
+            if (textured)
+            {
+                mat.SetTexture("_BaseMap", AssetDatabase.GetBuiltinExtraResource<Texture2D>("Default-Particle.psd"));
+            }
+            mat.SetColor("_BaseColor", Color.white);
+            mat.SetFloat("_Surface", 1f);
+            mat.SetFloat("_Blend", additive ? 2f : 0f);
+            mat.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
+            mat.SetFloat("_DstBlend", additive ? (float)BlendMode.One : (float)BlendMode.OneMinusSrcAlpha);
+            mat.SetFloat("_ZWrite", 0f);
+            mat.SetOverrideTag("RenderType", "Transparent");
+            mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            mat.renderQueue = (int)RenderQueue.Transparent;
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
+        private enum ParticleLook
+        {
+            Shrink,
+            Grow,
+            Flutter
+        }
+
+        /// <summary>A world-space system that only emits from script (FxPlayer.Emit), never on its own.</summary>
+        private static ParticleSystem MakeParticles(Transform parent, string name, Material material, float gravity, ParticleLook look)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            var ps = go.AddComponent<ParticleSystem>();
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+            ParticleSystem.MainModule main = ps.main;
+            main.loop = true;
+            main.playOnAwake = true;
+            main.duration = 1f;
+            main.startSpeed = 0f;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.gravityModifier = gravity;
+            main.maxParticles = 3000;
+            main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+
+            ParticleSystem.EmissionModule emission = ps.emission;
+            emission.rateOverTime = 0f;
+            ParticleSystem.ShapeModule shape = ps.shape;
+            shape.enabled = false;
+
+            ParticleSystem.SizeOverLifetimeModule size = ps.sizeOverLifetime;
+            size.enabled = true;
+            size.size = look == ParticleLook.Grow
+                ? new ParticleSystem.MinMaxCurve(1f, AnimationCurve.EaseInOut(0f, 0.6f, 1f, 2.5f))
+                : look == ParticleLook.Flutter
+                    ? new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 1f, 1f, 0.7f))
+                    : new ParticleSystem.MinMaxCurve(1f, AnimationCurve.EaseInOut(0f, 1f, 1f, 0f));
+
+            ParticleSystem.ColorOverLifetimeModule color = ps.colorOverLifetime;
+            color.enabled = true;
+            var fade = new Gradient();
+            fade.SetKeys(
+                new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, look == ParticleLook.Flutter ? 0.8f : 0.5f), new GradientAlphaKey(0f, 1f) });
+            color.color = new ParticleSystem.MinMaxGradient(fade);
+
+            if (look == ParticleLook.Flutter)
+            {
+                ParticleSystem.RotationOverLifetimeModule rotation = ps.rotationOverLifetime;
+                rotation.enabled = true;
+                rotation.z = new ParticleSystem.MinMaxCurve(-6f, 6f);
+                ParticleSystem.LimitVelocityOverLifetimeModule drag = ps.limitVelocityOverLifetime;
+                drag.enabled = true;
+                drag.drag = 1.2f;
+            }
+            if (look == ParticleLook.Grow)
+            {
+                ParticleSystem.LimitVelocityOverLifetimeModule drag = ps.limitVelocityOverLifetime;
+                drag.enabled = true;
+                drag.drag = 2f;
+            }
+
+            var renderer = go.GetComponent<ParticleSystemRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            return ps;
         }
 
         private static Shader LitShader => Shader.Find("Universal Render Pipeline/Lit");
@@ -274,6 +380,21 @@ namespace MarbleSync.EditorTools
             ring.transform.localPosition = new Vector3(0f, -0.24f, 0f);
             ring.transform.localScale = new Vector3(0.8f, 0.01f, 0.8f);
 
+            var trail = root.AddComponent<TrailRenderer>();
+            trail.sharedMaterial = mats.ParticleAdd;
+            trail.time = 0.22f;
+            trail.minVertexDistance = 0.04f;
+            trail.widthCurve = AnimationCurve.EaseInOut(0f, 0.42f, 1f, 0f);
+            trail.shadowCastingMode = ShadowCastingMode.Off;
+            trail.receiveShadows = false;
+            trail.emitting = false;
+
+            var roll = root.AddComponent<AudioSource>();
+            roll.playOnAwake = false;
+            roll.loop = true;
+            roll.spatialBlend = 0f;
+            roll.volume = 0f;
+
             var view = root.AddComponent<MarbleView>();
             Wire(view, "body", body.transform);
             Wire(view, "bodyRenderer", body.GetComponent<Renderer>());
@@ -283,6 +404,8 @@ namespace MarbleSync.EditorTools
             Wire(view, "selectionRing", ring);
             Wire(view, "clickTarget", click);
             Wire(view, "clickCollider", collider);
+            Wire(view, "trail", trail);
+            Wire(view, "rollSource", roll);
             return SavePrefab(root, ghost ? "GhostMarble" : "Marble").GetComponent<MarbleView>();
         }
 
@@ -353,7 +476,7 @@ namespace MarbleSync.EditorTools
             return SavePrefab(root, "Element").GetComponent<ElementView>();
         }
 
-        private static MarbleSetView BuildMarbleSet(Transform parent, string name, MarbleView prefab, SeesawView seesaw, bool ghost)
+        private static MarbleSetView BuildMarbleSet(Transform parent, string name, MarbleView prefab, SeesawView seesaw, SfxPlayer sfx, bool ghost)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent);
@@ -362,6 +485,7 @@ namespace MarbleSync.EditorTools
             Wire(set, "marblePrefab", prefab);
             Wire(set, "container", container);
             Wire(set, "seesaw", seesaw);
+            Wire(set, "sfx", sfx);
             WireBool(set, "ghost", ghost);
             return set;
         }
@@ -476,6 +600,10 @@ namespace MarbleSync.EditorTools
             outcome.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
             outcome.rectTransform.sizeDelta = new Vector2(1000f, 300f);
             outcome.rectTransform.anchoredPosition = new Vector2(0f, 180f);
+            var outcomePop = outcome.gameObject.AddComponent<PopIn>();
+            Wire(outcomePop, "target", outcome.rectTransform);
+            var contPop = cont.gameObject.AddComponent<PopIn>();
+            Wire(contPop, "target", (RectTransform)cont.transform);
             var shadow = outcome.gameObject.AddComponent<Shadow>();
             shadow.effectDistance = new Vector2(3f, -3f);
 

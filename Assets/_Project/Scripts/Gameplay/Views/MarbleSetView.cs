@@ -9,6 +9,7 @@ namespace MarbleSync.Gameplay
         [SerializeField] private MarbleView marblePrefab;
         [SerializeField] private Transform container;
         [SerializeField] private SeesawView seesaw;
+        [SerializeField] private SfxPlayer sfx;
         [SerializeField] private bool ghost;
 
         private ComponentPool<MarbleView> _pool;
@@ -40,7 +41,7 @@ namespace MarbleSync.Gameplay
             {
                 MarbleView view = _pool.Get();
                 view.name = (ghost ? "Ghost_" : "Marble_") + level.Lane(i).MarbleName;
-                view.Configure(i, level.Lane(i).MarbleColor, ghost);
+                view.Configure(i, level.Lane(i).MarbleColor, ghost, sfx.RollClip);
                 Vector3 start = level.Path(i).Evaluate(0f);
                 _previous[i] = start;
                 _current[i] = start;

@@ -43,10 +43,29 @@ namespace MarbleSync.Gameplay
         private ElementDef _def;
         private float _doorOpenBlend;
         private float _pulse;
+        private float _splash;
+        private float _splashTime;
 
         public int Lane { get; private set; }
         public int Index { get; private set; }
         public ElementDef Def => _def;
+
+        /// <summary>Colour used by particles for this element (liquid colour or logic colour).</summary>
+        public Color FxColor
+        {
+            get
+            {
+                switch (_def.Kind)
+                {
+                    case ElementKind.Honey: return honeyColor;
+                    case ElementKind.Oil: return oilColor;
+                    case ElementKind.Water: return waterColor;
+                    case ElementKind.Sensor: return Color.white;
+                    case ElementKind.Curve: return new Color(1f, 0.95f, 0.8f);
+                    default: return GetLogicColor(_def.Color);
+                }
+            }
+        }
 
         public void Configure(int lane, int index, ElementDef def, Vector3 position, Vector3 direction, bool showLabel)
         {
@@ -94,6 +113,13 @@ namespace MarbleSync.Gameplay
             }
         }
 
+        /// <summary>Puddle surface wobbles after a marble ploughs through it.</summary>
+        public void Splash()
+        {
+            _splash = 1f;
+            _splashTime = 0f;
+        }
+
         public void Pulse()
         {
             _pulse = 1f;
@@ -132,6 +158,14 @@ namespace MarbleSync.Gameplay
             float scale = 1f + _pulse * 0.4f;
             buttonRenderer.transform.localScale = new Vector3(0.26f * scale, 0.03f, 0.26f * scale);
             sensorRenderer.transform.localScale = new Vector3(0.95f * scale, 0.06f, 0.06f);
+
+            if (_def.IsPuddle)
+            {
+                _splash = Mathf.MoveTowards(_splash, 0f, Time.deltaTime * 1.6f);
+                _splashTime += Time.deltaTime;
+                float w = _splash * Mathf.Sin(_splashTime * 28f);
+                puddle.transform.localScale = new Vector3(0.44f * (1f + w * 0.15f), 0.1f * (1f + w * 0.9f), 0.9f * (1f - w * 0.12f));
+            }
         }
 
         private Color GetLogicColor(LogicColor color) => logicColors[(int)color];
