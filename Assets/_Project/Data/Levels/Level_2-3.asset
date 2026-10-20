@@ -1,0 +1,95 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9453373f36aa133429d0229f462fff88, type: 3}
+  m_Name: Level_2-3
+  m_EditorClassIdentifier: MarbleSync.Gameplay::MarbleSync.Gameplay.LevelDefinition
+  levelId: 2-3
+  displayName: "\xC1gua"
+  version: 1
+  introText: "\xC1gua lava o mel e o \xF3leo e deixa a bolinha molhada. A \xE1gua n\xE3o acumula."
+  timerHint: 
+  spongeCount: 0
+  timersUnlocked: 0
+  lanes:
+  - MarbleName: Azul
+    MarbleColor: {r: 0.2, g: 0.45, b: 1, a: 1}
+    Waypoints:
+    - {x: -22, y: 6, z: -2}
+    - {x: -10, y: 3, z: -2}
+    - {x: -6, y: 0.9, z: -2}
+    - {x: 0, y: 0, z: 0}
+    Elements:
+    - Kind: 1
+      Distance: 1.2369317
+      Color: 0
+      Id: 0
+      StartsActive: 1
+    - Kind: 3
+      Distance: 6.1846585
+      Color: 0
+      Id: 0
+      StartsActive: 1
+  - MarbleName: Vermelha
+    MarbleColor: {r: 1, g: 0.25, b: 0.2, a: 1}
+    Waypoints:
+    - {x: -20, y: 5, z: 0}
+    - {x: -16, y: 4, z: 0}
+    - {x: -16, y: 3.6, z: 1}
+    - {x: -10, y: 2.1, z: 1}
+    - {x: -10, y: 1.6999999, z: 0}
+    - {x: -6, y: 0.9, z: 0}
+    - {x: 0, y: 0, z: 0}
+    Elements:
+    - Kind: 2
+      Distance: 0.82462114
+      Color: 0
+      Id: 0
+      StartsActive: 1
+    - Kind: 3
+      Distance: 8.9109335
+      Color: 0
+      Id: 0
+      StartsActive: 1
+  - MarbleName: Verde
+    MarbleColor: {r: 0.25, g: 0.8, b: 0.3, a: 1}
+    Waypoints:
+    - {x: -18, y: 4, z: 2}
+    - {x: -10, y: 2, z: 2}
+    - {x: -6, y: 0.9, z: 2}
+    - {x: 0, y: 0, z: 0}
+    Elements:
+    - Kind: 1
+      Distance: 4.9477267
+      Color: 0
+      Id: 0
+      StartsActive: 1
+  seesawStart: {x: 0, y: 0, z: 0}
+  seesawDirection: {x: 1, y: -0.15, z: 0}
+  baseAcceleration: 3
+  accelerationPerDrop: 10
+  curveAngleThreshold: 60
+  tuning:
+    StepsPerSecond: 60
+    BaseMaxSpeed: 5
+    Deceleration: 6
+    CurveSpeedFactor: 0.3
+    HoneyMaxSpeedFactor: 0.5
+    HoneyAccelFactor: 0.6
+    OilMaxSpeedFactor: 1.5
+    OilAccelFactor: 1.5
+    BurningMaxSpeedFactor: 2.2
+    BurningAccelFactor: 2.5
+    BurnFuseSeconds: 1
+    SeesawLength: 6
+    SeesawHalfSeconds: 0.5
+    SeesawFinishSeconds: 0.25
+    TimerStepSeconds: 0.25

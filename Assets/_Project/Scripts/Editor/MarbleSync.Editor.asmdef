@@ -1,0 +1,21 @@
+{
+    "name": "MarbleSync.Editor",
+    "rootNamespace": "MarbleSync.EditorTools",
+    "references": [
+        "MarbleSync.Simulation",
+        "MarbleSync.Gameplay",
+        "Unity.InputSystem",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

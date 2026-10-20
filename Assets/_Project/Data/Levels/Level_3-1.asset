@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9453373f36aa133429d0229f462fff88, type: 3}
+  m_Name: Level_3-1
+  m_EditorClassIdentifier: MarbleSync.Gameplay::MarbleSync.Gameplay.LevelDefinition
+  levelId: 3-1
+  displayName: "Portas l\xF3gicas"
+  version: 1
+  introText: "Quando uma bolinha passa por um bot\xE3o, todas as portas da mesma cor se invertem: abertas fecham, fechadas abrem."
+  timerHint: 
+  spongeCount: 0
+  timersUnlocked: 0
+  lanes:
+  - MarbleName: Azul
+    MarbleColor: {r: 0.2, g: 0.45, b: 1, a: 1}
+    Waypoints:
+    - {x: -20, y: 5, z: -1}
+    - {x: -10, y: 2.5, z: -1}
+    - {x: -6, y: 0.9, z: -1}
+    - {x: 0, y: 0, z: 0}
+    Elements:
+    - Kind: 5
+      Distance: 2.0615528
+      Color: 0
+      Id: 1
+      StartsActive: 1
+  - MarbleName: Vermelha
+    MarbleColor: {r: 1, g: 0.25, b: 0.2, a: 1}
+    Waypoints:
+    - {x: -16, y: 4, z: 1}
+    - {x: -10, y: 2.5, z: 1}
+    - {x: -6, y: 0.9, z: 1}
+    - {x: 0, y: 0, z: 0}
+    Elements:
+    - Kind: 6
+      Distance: 3.0923293
+      Color: 0
+      Id: 0
+      StartsActive: 1
+  seesawStart: {x: 0, y: 0, z: 0}
+  seesawDirection: {x: 1, y: -0.15, z: 0}
+  baseAcceleration: 3
+  accelerationPerDrop: 10
+  curveAngleThreshold: 60
+  tuning:
+    StepsPerSecond: 60
+    BaseMaxSpeed: 5
+    Deceleration: 6
+    CurveSpeedFactor: 0.3
+    HoneyMaxSpeedFactor: 0.5
+    HoneyAccelFactor: 0.6
+    OilMaxSpeedFactor: 1.5
+    OilAccelFactor: 1.5
+    BurningMaxSpeedFactor: 2.2
+    BurningAccelFactor: 2.5
+    BurnFuseSeconds: 1
+    SeesawLength: 6
+    SeesawHalfSeconds: 0.5
+    SeesawFinishSeconds: 0.25
+    TimerStepSeconds: 0.25
