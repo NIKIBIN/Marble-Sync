@@ -5,7 +5,10 @@ using UnityEngine.UI;
 
 namespace MarbleSync.Gameplay
 {
-    /// <summary>Must be held for a short time before it fires. Prevents accidental restarts.</summary>
+    /// <summary>
+    /// Fires on press when no hold is required; otherwise must be held for a short time first.
+    /// Prevents accidental restarts in the middle of an attempt.
+    /// </summary>
     public sealed class HoldButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler
     {
         [SerializeField] private Image fill;
@@ -18,16 +21,35 @@ namespace MarbleSync.Gameplay
 
         public event Action Completed;
 
+        public bool RequireHold { get; set; } = true;
+
         public void SetExternalHold(bool held)
         {
+            if (held && !_externalHeld)
+            {
+                Press();
+            }
             _externalHeld = held;
         }
 
-        public void OnPointerDown(PointerEventData eventData) => _pointerHeld = true;
+        public void OnPointerDown(PointerEventData eventData)
+        {
+            _pointerHeld = true;
+            Press();
+        }
 
         public void OnPointerUp(PointerEventData eventData) => _pointerHeld = false;
 
         public void OnPointerExit(PointerEventData eventData) => _pointerHeld = false;
+
+        private void Press()
+        {
+            if (!RequireHold)
+            {
+                _firedThisHold = true;
+                Completed?.Invoke();
+            }
+        }
 
         private void OnDisable()
         {

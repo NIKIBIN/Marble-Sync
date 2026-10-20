@@ -24,3 +24,13 @@ Fonte de design: [`GDD - Marble Sync.md`](../GDD%20-%20Marble%20Sync.md).
 3. Comparar duas tentativas lado a lado numa linha do tempo de chegadas (GDD, Histórico de replay).
 4. Persistência do histórico entre sessões e marcação de replays desatualizados pela versão da fase.
 5. Arte e áudio finais no lugar dos placeholders (ver `ASSET_LEDGER.md`).
+
+## Polimento 1 (2026-10-20, pedido do Gabriel)
+
+- Trilhos viraram half-pipes; a gangorra tem uma trilha paralela por bolinha.
+- A gangorra não treme mais e não tem portão: ao fechar, a entrada sobe e bloqueia quem está fora. Sucesso nivela, erro mantém levantada.
+- Fase final da gangorra dura 0,75 s (GDD dizia 0,25 s) para não haver um salto brusco de velocidade; a câmera enquadra bolinhas e gangorra até o fim.
+- Tambor e zoom só começam ~1,2 s antes da primeira bolinha chegar à gangorra.
+- O HUD não mostra instruções nem tempos (sem diferença em segundos, sem atraso em segundos, histórico só com ✓/✗).
+- Reiniciar é instantâneo quando a tentativa já acabou ou já está perdida; segurar só é exigido no meio de uma tentativa viva.
+- Painéis do HUD não bloqueiam mais cliques nas bolinhas.

@@ -8,12 +8,16 @@ namespace MarbleSync.Gameplay
     {
         [SerializeField] private MarbleView marblePrefab;
         [SerializeField] private Transform container;
+        [SerializeField] private SeesawView seesaw;
         [SerializeField] private bool ghost;
 
         private ComponentPool<MarbleView> _pool;
         private LevelDefinition _level;
         private Vector3[] _previous = new Vector3[0];
         private Vector3[] _current = new Vector3[0];
+        private float[] _previousSeesawT = new float[0];
+        private float[] _currentSeesawT = new float[0];
+        private bool[] _onSeesaw = new bool[0];
         private bool _snapNext;
 
         public int Count => _pool == null ? 0 : _pool.Active.Count;
@@ -29,6 +33,9 @@ namespace MarbleSync.Gameplay
             int count = level.MarbleCount;
             _previous = new Vector3[count];
             _current = new Vector3[count];
+            _previousSeesawT = new float[count];
+            _currentSeesawT = new float[count];
+            _onSeesaw = new bool[count];
             for (int i = 0; i < count; i++)
             {
                 MarbleView view = _pool.Get();
@@ -52,8 +59,9 @@ namespace MarbleSync.Gameplay
         {
             for (int i = 0; i < _current.Length; i++)
             {
-                _current[i] = SurfacePoint(sim, i);
+                Sample(sim, i);
                 _previous[i] = _current[i];
+                _previousSeesawT[i] = _currentSeesawT[i];
             }
             _snapNext = true;
         }
@@ -63,8 +71,14 @@ namespace MarbleSync.Gameplay
         {
             for (int i = 0; i < _current.Length; i++)
             {
+                bool wasOnSeesaw = _onSeesaw[i];
                 _previous[i] = _current[i];
-                _current[i] = SurfacePoint(sim, i);
+                _previousSeesawT[i] = _currentSeesawT[i];
+                Sample(sim, i);
+                if (_onSeesaw[i] && !wasOnSeesaw)
+                {
+                    _previousSeesawT[i] = 0f;
+                }
             }
         }
 
@@ -73,7 +87,11 @@ namespace MarbleSync.Gameplay
             for (int i = 0; i < _current.Length; i++)
             {
                 MarbleView view = _pool.Active[i];
-                view.Place(Vector3.Lerp(_previous[i], _current[i], alpha), _snapNext);
+                // Seesaw positions are resolved every frame so marbles ride the deck while it tilts.
+                Vector3 point = _onSeesaw[i]
+                    ? seesaw.LanePoint(i, Mathf.Lerp(_previousSeesawT[i], _currentSeesawT[i], alpha))
+                    : Vector3.Lerp(_previous[i], _current[i], alpha);
+                view.Place(point, _snapNext);
                 view.ShowState(sim.GetMarble(i));
             }
             _snapNext = false;
@@ -89,7 +107,7 @@ namespace MarbleSync.Gameplay
 
         public Bounds MarbleBounds(MarbleSimulation sim)
         {
-            var bounds = new Bounds(_current[0], Vector3.one);
+            var bounds = new Bounds(_pool.Active[0].transform.position, Vector3.one);
             for (int i = 0; i < _current.Length; i++)
             {
                 if (sim.GetMarble(i).Status == MarbleStatus.Melted)
@@ -101,15 +119,20 @@ namespace MarbleSync.Gameplay
             return bounds;
         }
 
-        private Vector3 SurfacePoint(MarbleSimulation sim, int i)
+        private void Sample(MarbleSimulation sim, int i)
         {
             MarbleState m = sim.GetMarble(i);
-            if (m.Status == MarbleStatus.OnSeesaw || m.Status == MarbleStatus.Arrived)
+            _onSeesaw[i] = m.Status == MarbleStatus.OnSeesaw || m.Status == MarbleStatus.Arrived;
+            if (_onSeesaw[i])
             {
-                float t = Mathf.Clamp01(m.SeesawPos / _level.Tuning.SeesawLength);
-                return Vector3.Lerp(_level.SeesawLaneStart(i), _level.SeesawLaneEnd(i), t);
+                _currentSeesawT[i] = Mathf.Clamp01(m.SeesawPos / _level.Tuning.SeesawLength);
+                _current[i] = _level.SeesawLaneStart(i);
             }
-            return _level.Path(i).Evaluate(m.Distance);
+            else
+            {
+                _currentSeesawT[i] = 0f;
+                _current[i] = _level.Path(i).Evaluate(m.Distance);
+            }
         }
     }
 }

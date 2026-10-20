@@ -10,7 +10,7 @@ namespace MarbleSync.Gameplay
         [SerializeField] private Vector3 viewEuler = new Vector3(42f, -18f, 0f);
         [SerializeField] private float margin = 1.15f;
         [SerializeField] private float minDistance = 6f;
-        [SerializeField] private float smoothTime = 0.45f;
+        [SerializeField] private float smoothTime = 0.3f;
 
         private Vector3 _targetCenter;
         private float _targetDistance = 10f;

@@ -66,5 +66,5 @@ MonoBehaviour:
     BurnFuseSeconds: 1
     SeesawLength: 6
     SeesawHalfSeconds: 0.5
-    SeesawFinishSeconds: 0.25
+    SeesawFinishSeconds: 0.75
     TimerStepSeconds: 0.25

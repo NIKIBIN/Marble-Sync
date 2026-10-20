@@ -35,7 +35,7 @@ namespace MarbleSync.Gameplay
 
             AttemptOutcome o = record.Outcome;
             string mark = o.Success ? "✓" : "✗";
-            label.text = $"{mark} #{record.AttemptNumber} — {GameText.Seconds(o.Spread)}";
+            label.text = $"{mark}  #{record.AttemptNumber}";
             label.color = o.Success ? new Color(0.55f, 1f, 0.6f) : Color.white;
             ghostLabel.text = isGhost ? "Fantasma ●" : "Fantasma";
         }

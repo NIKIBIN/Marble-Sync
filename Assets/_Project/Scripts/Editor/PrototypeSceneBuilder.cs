@@ -101,15 +101,15 @@ namespace MarbleSync.EditorTools
             Wire(trackView, "pipeContainer", pipes);
             Wire(trackView, "elementContainer", elements);
 
-            MarbleSetView marbles = BuildMarbleSet(game.transform, "Marbles", marble, false);
-            MarbleSetView ghosts = BuildMarbleSet(game.transform, "GhostMarbles", ghost, true);
+            SeesawView seesaw = BuildSeesaw(game.transform, controller, trackView, halfPipe, mats);
+            MarbleSetView marbles = BuildMarbleSet(game.transform, "Marbles", marble, seesaw, false);
+            MarbleSetView ghosts = BuildMarbleSet(game.transform, "GhostMarbles", ghost, seesaw, true);
 
             Wire(controller, "library", library);
             Wire(controller, "trackView", trackView);
             Wire(controller, "marbles", marbles);
             Wire(controller, "ghostMarbles", ghosts);
 
-            SeesawView seesaw = BuildSeesaw(game.transform, controller, trackView, halfPipe, mats);
 
             // Juice
             var audioGo = new GameObject("Audio");
@@ -353,7 +353,7 @@ namespace MarbleSync.EditorTools
             return SavePrefab(root, "Element").GetComponent<ElementView>();
         }
 
-        private static MarbleSetView BuildMarbleSet(Transform parent, string name, MarbleView prefab, bool ghost)
+        private static MarbleSetView BuildMarbleSet(Transform parent, string name, MarbleView prefab, SeesawView seesaw, bool ghost)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent);
@@ -361,6 +361,7 @@ namespace MarbleSync.EditorTools
             Transform container = Child(go.transform, "Container");
             Wire(set, "marblePrefab", prefab);
             Wire(set, "container", container);
+            Wire(set, "seesaw", seesaw);
             WireBool(set, "ghost", ghost);
             return set;
         }
@@ -374,7 +375,6 @@ namespace MarbleSync.EditorTools
             GameObject plank = Primitive(PrimitiveType.Cube, "Plank", deck, mats.Wood);
             Transform lanes = Child(deck, "Tracks");
             GameObject half = Primitive(PrimitiveType.Cube, "HalfMarker", deck, mats.Marker);
-            GameObject gate = Primitive(PrimitiveType.Cube, "Gate", go.transform, mats.Metal);
             GameObject fulcrum = Primitive(PrimitiveType.Cylinder, "Fulcrum", go.transform, mats.Metal);
             fulcrum.transform.localScale = new Vector3(0.5f, 0.6f, 0.5f);
 
@@ -384,7 +384,6 @@ namespace MarbleSync.EditorTools
             Wire(view, "laneRoot", lanes);
             Wire(view, "pipePrefab", pipePrefab);
             Wire(view, "plank", plank.transform);
-            Wire(view, "gate", gate.transform);
             Wire(view, "halfMarker", half.transform);
             Wire(view, "fulcrum", fulcrum.transform);
             return view;
@@ -404,13 +403,6 @@ namespace MarbleSync.EditorTools
             canvasGo.AddComponent<GraphicRaycaster>();
             RectTransform rootRect = canvasGo.GetComponent<RectTransform>();
 
-            // Top-left: title + intro
-            RectTransform topLeft = Panel(rootRect, "TopLeft", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(24f, -24f), new Vector2(820f, 190f), new Color(0f, 0f, 0f, 0.45f));
-            Text title = Label(topLeft, "Title", "1-1 · Tutorial", 40, TextAnchor.UpperLeft, FontStyle.Bold);
-            Stretch(title.rectTransform, new Vector2(18f, -12f), new Vector2(-18f, -64f), top: true, height: 52f);
-            Text intro = Label(topLeft, "Intro", "", 22, TextAnchor.UpperLeft);
-            Stretch(intro.rectTransform, new Vector2(18f, -66f), new Vector2(-18f, 10f), top: true, height: 115f);
-
             // Top-right: level navigation
             Button prev = MakeButton(rootRect, "PrevLevel", "◀ Fase", new Vector2(1f, 1f), new Vector2(-250f, -24f), new Vector2(110f, 54f));
             Button next = MakeButton(rootRect, "NextLevel", "Fase ▶", new Vector2(1f, 1f), new Vector2(-24f, -24f), new Vector2(110f, 54f));
@@ -419,18 +411,17 @@ namespace MarbleSync.EditorTools
             ((RectTransform)prev.transform).anchoredPosition = new Vector2(-148f, -24f);
 
             // Right: history
-            RectTransform history = Panel(rootRect, "History", new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-24f, -96f), new Vector2(430f, 560f), new Color(0f, 0f, 0f, 0.45f));
+            RectTransform history = Panel(rootRect, "History", new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-24f, -96f), new Vector2(430f, 560f), new Color(0f, 0f, 0f, 0f));
             history.pivot = new Vector2(1f, 1f);
             history.anchoredPosition = new Vector2(-24f, -96f);
-            Text historyTitle = Label(history, "HistoryTitle", "Tentativas", 26, TextAnchor.UpperLeft, FontStyle.Bold);
-            Stretch(historyTitle.rectTransform, new Vector2(16f, -10f), new Vector2(-16f, 0f), top: true, height: 36f);
+
             var listGo = new GameObject("Entries", typeof(RectTransform));
             listGo.transform.SetParent(history, false);
             var list = (RectTransform)listGo.transform;
             list.anchorMin = new Vector2(0f, 1f);
             list.anchorMax = new Vector2(1f, 1f);
             list.pivot = new Vector2(0.5f, 1f);
-            list.anchoredPosition = new Vector2(0f, -52f);
+            list.anchoredPosition = new Vector2(0f, -12f);
             list.sizeDelta = new Vector2(-24f, 0f);
             var layout = listGo.AddComponent<VerticalLayoutGroup>();
             layout.spacing = 6f;
@@ -440,16 +431,15 @@ namespace MarbleSync.EditorTools
             var fitter = listGo.AddComponent<ContentSizeFitter>();
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            // Bottom-left: status, sponge, timers, hint
-            RectTransform bottomLeft = Panel(rootRect, "BottomLeft", new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(24f, 24f), new Vector2(980f, 330f), new Color(0f, 0f, 0f, 0.45f));
+            // Bottom-left: tools (sponges, timers, hint). Hidden when the level has none.
+            RectTransform bottomLeft = Panel(rootRect, "BottomLeft", new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(24f, 24f), new Vector2(980f, 250f), new Color(0f, 0f, 0f, 0.45f));
             bottomLeft.pivot = Vector2.zero;
-            Text status = Label(bottomLeft, "Status", "", 22, TextAnchor.UpperLeft);
-            Stretch(status.rectTransform, new Vector2(18f, -12f), new Vector2(-18f, 0f), top: true, height: 84f);
+
             Text sponge = Label(bottomLeft, "Sponges", "Esponjas: 1/1", 24, TextAnchor.UpperLeft, FontStyle.Bold);
-            Stretch(sponge.rectTransform, new Vector2(18f, -98f), new Vector2(-18f, 0f), top: true, height: 30f);
+            Stretch(sponge.rectTransform, new Vector2(18f, -14f), new Vector2(-18f, 0f), top: true, height: 30f);
             sponge.color = new Color(1f, 0.92f, 0.5f);
             Text hint = Label(bottomLeft, "HintText", "", 22, TextAnchor.UpperLeft, FontStyle.Italic);
-            Stretch(hint.rectTransform, new Vector2(18f, -130f), new Vector2(-18f, 0f), top: true, height: 56f);
+            Stretch(hint.rectTransform, new Vector2(18f, -48f), new Vector2(-18f, 0f), top: true, height: 56f);
             hint.color = new Color(0.7f, 0.95f, 1f);
 
             var timerPanelGo = new GameObject("TimerPanel", typeof(RectTransform));
@@ -501,9 +491,8 @@ namespace MarbleSync.EditorTools
 
             var hud = canvasGo.AddComponent<HudView>();
             Wire(hud, "controller", controller);
-            Wire(hud, "titleText", title);
-            Wire(hud, "introText", intro);
-            Wire(hud, "statusText", status);
+
+            Wire(hud, "toolsPanel", bottomLeft.gameObject);
             Wire(hud, "outcomeText", outcome);
             Wire(hud, "timersText", timers);
             Wire(hud, "spongeText", sponge);
@@ -533,7 +522,7 @@ namespace MarbleSync.EditorTools
         {
             var root = new GameObject("HistoryEntry", typeof(RectTransform));
             var bg = root.AddComponent<Image>();
-            bg.color = new Color(1f, 1f, 1f, 0.06f);
+            bg.color = new Color(0f, 0f, 0f, 0.45f);
             var element = root.AddComponent<LayoutElement>();
             element.preferredHeight = 40f;
             var rect = (RectTransform)root.transform;
@@ -571,6 +560,7 @@ namespace MarbleSync.EditorTools
             var go = new GameObject(name, typeof(RectTransform), typeof(Image));
             go.transform.SetParent(parent, false);
             go.GetComponent<Image>().color = color;
+            go.GetComponent<Image>().raycastTarget = false; // panels must never swallow clicks meant for marbles
             var rect = (RectTransform)go.transform;
             rect.anchorMin = anchorMin;
             rect.anchorMax = anchorMax;
@@ -671,7 +661,7 @@ namespace MarbleSync.EditorTools
             fillRect.offsetMin = Vector2.zero;
             fillRect.offsetMax = Vector2.zero;
 
-            Text label = Label(rect, "Text", "Segure para reiniciar (R)", 22, TextAnchor.MiddleCenter, FontStyle.Bold);
+            Text label = Label(rect, "Text", "Reiniciar (R)", 22, TextAnchor.MiddleCenter, FontStyle.Bold);
             label.rectTransform.anchorMin = Vector2.zero;
             label.rectTransform.anchorMax = Vector2.one;
             label.rectTransform.offsetMin = Vector2.zero;

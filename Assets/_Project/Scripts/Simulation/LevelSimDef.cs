@@ -78,7 +78,7 @@ namespace MarbleSync.Simulation
         public float BurnFuseSeconds = 1f;
         public float SeesawLength = 3f;
         public float SeesawHalfSeconds = 0.5f;
-        public float SeesawFinishSeconds = 0.25f;
+        public float SeesawFinishSeconds = 0.75f; // GDD says 0.25 s; lengthened in playtest so the final rush is not a sudden jump
         public float TimerStepSeconds = 0.25f;
 
         public float Dt => 1f / StepsPerSecond;

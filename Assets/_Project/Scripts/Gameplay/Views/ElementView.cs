@@ -48,7 +48,7 @@ namespace MarbleSync.Gameplay
         public int Index { get; private set; }
         public ElementDef Def => _def;
 
-        public void Configure(int lane, int index, ElementDef def, Vector3 position, Vector3 direction)
+        public void Configure(int lane, int index, ElementDef def, Vector3 position, Vector3 direction, bool showLabel)
         {
             _block ??= new MaterialPropertyBlock();
             Lane = lane;
@@ -66,7 +66,7 @@ namespace MarbleSync.Gameplay
             buttonRenderer.gameObject.SetActive(def.Kind == ElementKind.Button);
             sensorRenderer.gameObject.SetActive(def.Kind == ElementKind.Sensor);
             // Square curves need no marker: the half-pipe corner shows them.
-            label.gameObject.SetActive(def.Kind == ElementKind.Sensor || def.Kind == ElementKind.Button);
+            label.gameObject.SetActive(showLabel && (def.Kind == ElementKind.Sensor || def.Kind == ElementKind.Button));
 
             clickTarget.BindElement(lane, index);
             clickCollider.enabled = def.Kind != ElementKind.Curve;

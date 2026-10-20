@@ -55,7 +55,7 @@ namespace MarbleSync.Gameplay
                 {
                     ElementView view = _elements.Get();
                     view.name = $"{defs[e].Kind}_{lane}_{e}";
-                    view.Configure(lane, e, defs[e], path.Evaluate(defs[e].Distance), path.Direction(defs[e].Distance));
+                    view.Configure(lane, e, defs[e], path.Evaluate(defs[e].Distance), path.Direction(defs[e].Distance), level.TimersUnlocked);
                 }
             }
         }

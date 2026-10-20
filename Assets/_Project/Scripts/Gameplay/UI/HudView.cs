@@ -6,15 +6,15 @@ using UnityEngine.UI;
 
 namespace MarbleSync.Gameplay
 {
-    /// <summary>Screen-space HUD. Pure presentation: reads controller state and forwards button presses.</summary>
+    /// <summary>
+    /// Screen-space HUD. Pure presentation: reads controller state and forwards button presses.
+    /// Deliberately quiet: no instructions and no arrival times, the player works the timing out.
+    /// </summary>
     public sealed class HudView : MonoBehaviour
     {
         [SerializeField] private AttemptController controller;
 
         [Header("Texts")]
-        [SerializeField] private Text titleText;
-        [SerializeField] private Text introText;
-        [SerializeField] private Text statusText;
         [SerializeField] private Text outcomeText;
         [SerializeField] private Text timersText;
         [SerializeField] private Text spongeText;
@@ -37,6 +37,7 @@ namespace MarbleSync.Gameplay
         [SerializeField] private Button clearPlanButton;
 
         [Header("Panels")]
+        [SerializeField] private GameObject toolsPanel;
         [SerializeField] private GameObject timerPanel;
         [SerializeField] private GameObject replayPanel;
         [SerializeField] private GameObject historyPanel;
@@ -96,15 +97,15 @@ namespace MarbleSync.Gameplay
 
         private void Update()
         {
-            Keyboard kb = Keyboard.current;
-            restartButton.SetExternalHold(kb != null && kb.rKey.isPressed && controller.CanRestart);
-
-            // Caramelized marbles can appear mid-attempt: keep the status line live while running.
+            // A marble can melt or be blocked mid-attempt: from then on restart no longer needs a hold.
+            restartButton.RequireHold = controller.RestartNeedsHold;
             if (controller.Phase == AttemptPhase.Running)
             {
-                statusText.text = StatusLine();
                 restartButton.gameObject.SetActive(controller.CanRestart);
             }
+
+            Keyboard kb = Keyboard.current;
+            restartButton.SetExternalHold(kb != null && kb.rKey.isPressed && controller.CanRestart);
         }
 
         private void Refresh()
@@ -112,81 +113,37 @@ namespace MarbleSync.Gameplay
             LevelDefinition level = controller.Level;
             AttemptPhase phase = controller.Phase;
 
-            titleText.text = $"{level.LevelId}  ·  {level.DisplayName}";
-            introText.text = level.IntroText;
-            statusText.text = StatusLine();
-
-            startButton.gameObject.SetActive(phase == AttemptPhase.Setup);
+            startButton.gameObject.SetActive(phase == AttemptPhase.Setup && level.TimersUnlocked);
             restartButton.gameObject.SetActive(controller.CanRestart && phase != AttemptPhase.Replay);
+            restartButton.RequireHold = controller.RestartNeedsHold;
             continueButton.gameObject.SetActive(phase == AttemptPhase.Finished && controller.LastRecord.Outcome.Success);
             clearPlanButton.gameObject.SetActive(phase == AttemptPhase.Setup && controller.HasPlannedInputs);
 
-            spongeText.gameObject.SetActive(level.SpongeCount > 0);
+            bool sponges = level.SpongeCount > 0;
+            spongeText.gameObject.SetActive(sponges);
             spongeText.text = $"Esponjas: {controller.SpongesLeft}/{level.SpongeCount}";
 
-            RefreshTimers(level, phase);
+            bool hintAvailable = controller.HintUnlocked && level.TimerHint.Length > 0;
+            hintButton.gameObject.SetActive(hintAvailable);
+            hintText.gameObject.SetActive(hintAvailable && _hintOpen);
+            hintText.text = level.TimerHint;
+
+            bool timers = RefreshTimers(level, phase);
+            toolsPanel.SetActive(sponges || timers || hintAvailable);
+
             RefreshOutcome(level, phase);
             RefreshReplay(phase);
             RefreshHistory();
-
-            hintButton.gameObject.SetActive(controller.HintUnlocked && level.TimerHint.Length > 0);
-            hintText.gameObject.SetActive(controller.HintUnlocked && _hintOpen);
-            hintText.text = "Dica: " + level.TimerHint;
         }
 
-        private string StatusLine()
+        private bool RefreshTimers(LevelDefinition level, AttemptPhase phase)
         {
-            LevelDefinition level = controller.Level;
-            switch (controller.Phase)
-            {
-                case AttemptPhase.Setup:
-                    _sb.Clear();
-                    if (level.TimersUnlocked)
-                    {
-                        _sb.Append("Clique numa bolinha para programar o timer dela. Espaço ou \"Começar\" inicia a tentativa.");
-                    }
-                    else
-                    {
-                        _sb.Append($"Clique numa bolinha (ou tecle 1–{level.MarbleCount}) para soltá-la. A tentativa começa no primeiro clique.");
-                    }
-                    if (controller.SpongesLeft > 0)
-                    {
-                        _sb.Append("\nClique numa poça para usar a esponja (só antes de soltar).");
-                    }
-                    if (controller.HasPlannedInputs)
-                    {
-                        _sb.Append("\nTentativa carregada como base: as solturas dela vão se repetir.");
-                    }
-                    if (controller.GhostRecord != null)
-                    {
-                        _sb.Append($"\nFantasma: tentativa #{controller.GhostRecord.AttemptNumber}.");
-                    }
-                    return _sb.ToString();
-                case AttemptPhase.Running:
-                    for (int i = 0; i < controller.Sim.MarbleCount; i++)
-                    {
-                        if (controller.Sim.CanResume(i))
-                        {
-                            return $"A {level.Lane(i).MarbleName} caramelizou! Clique nela para voltar a rolar.";
-                        }
-                    }
-                    return controller.Sim.AllReleased ? string.Empty : "Clique nas bolinhas para soltá-las.";
-                case AttemptPhase.Finished:
-                    return "Segure Reiniciar (ou R) para tentar de novo.";
-                case AttemptPhase.Replay:
-                    return string.Empty;
-                default:
-                    throw new System.ArgumentOutOfRangeException();
-            }
-        }
-
-        private void RefreshTimers(LevelDefinition level, AttemptPhase phase)
-        {
-            bool show = level.TimersUnlocked && (phase == AttemptPhase.Setup || controller.Timers.ToList().Count > 0);
+            var rules = controller.Timers.ToList();
+            bool show = level.TimersUnlocked && (phase == AttemptPhase.Setup || rules.Count > 0);
             timerPanel.SetActive(show);
             if (!show)
             {
-                return;
+                return false;
             }
 
             bool editing = phase == AttemptPhase.Setup && controller.SelectedTimerMarble >= 0;
@@ -196,23 +153,16 @@ namespace MarbleSync.Gameplay
             timerClearButton.interactable = editing;
 
             _sb.Clear();
-            _sb.Append("<b>Timers</b>");
-            if (phase == AttemptPhase.Setup)
-            {
-                _sb.Append(editing
-                    ? $"  (editando: {level.Lane(controller.SelectedTimerMarble).MarbleName} — ▲▼ 0,25 s, T gatilho, clique num sensor/botão para ancorar)"
-                    : "  (clique numa bolinha para editar)");
-            }
-            var rules = controller.Timers.ToList();
-            if (rules.Count == 0)
-            {
-                _sb.Append("\nNenhum timer: todas as solturas são manuais.");
-            }
             for (int i = 0; i < rules.Count; i++)
             {
-                _sb.Append("\n• ").Append(GameText.DescribeTimer(rules[i], level));
+                if (i > 0)
+                {
+                    _sb.Append('\n');
+                }
+                _sb.Append("• ").Append(GameText.DescribeTimer(rules[i], level));
             }
             timersText.text = _sb.ToString();
+            return true;
         }
 
         private void RefreshOutcome(LevelDefinition level, AttemptPhase phase)
@@ -231,12 +181,11 @@ namespace MarbleSync.Gameplay
             _sb.Clear();
             if (o.Success)
             {
-                _sb.Append("<size=44><b>Sincronizadas!</b></size>\n");
-                _sb.Append($"Diferença entre a primeira e a última: {GameText.Seconds(o.Spread)}");
+                _sb.Append("<size=48><b>Sincronizadas!</b></size>");
             }
             else
             {
-                _sb.Append("<size=40><b>Quase!</b></size>");
+                _sb.Append("<size=44><b>Quase!</b></size>");
                 for (int i = 0; i < o.Marbles.Length; i++)
                 {
                     string line = GameText.DescribeFailure(i, o.Marbles[i], level);
@@ -255,7 +204,7 @@ namespace MarbleSync.Gameplay
             replayPanel.SetActive(phase == AttemptPhase.Replay);
             if (phase == AttemptPhase.Replay)
             {
-                replayText.text = $"Replay da tentativa #{controller.ReplayRecord.AttemptNumber}  ·  {controller.ReplaySpeed:0.##}x";
+                replayText.text = $"Replay #{controller.ReplayRecord.AttemptNumber}  ·  {controller.ReplaySpeed:0.##}x";
             }
         }
 

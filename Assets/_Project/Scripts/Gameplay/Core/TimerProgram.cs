@@ -140,11 +140,6 @@ namespace MarbleSync.Gameplay
     {
         private static readonly NumberFormatInfo PtBr = new NumberFormatInfo { NumberDecimalSeparator = "," };
 
-        public static string Seconds(float seconds)
-        {
-            return seconds.ToString("0.00", PtBr) + " s";
-        }
-
         public static string ColorName(LogicColor color)
         {
             switch (color)
@@ -188,7 +183,7 @@ namespace MarbleSync.Gameplay
             switch (result.Failure)
             {
                 case FailureReason.BlockedBySeesaw:
-                    return $"{name} chegou {Seconds(result.Lateness)} atrasada";
+                    return $"{name} chegou atrasada";
                 case FailureReason.Melted:
                     return $"{name} derreteu";
                 case FailureReason.NeverArrived:

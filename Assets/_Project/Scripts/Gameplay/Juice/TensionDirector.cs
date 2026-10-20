@@ -17,12 +17,15 @@ namespace MarbleSync.Gameplay
         [SerializeField] private float minDrumRate = 6f;
         [SerializeField] private float maxDrumRate = 30f;
         [SerializeField] private float slowMotionLead = 0.8f;
+        [Tooltip("Drums and zoom start this many seconds before the first marble reaches the seesaw.")]
+        [SerializeField] private float drumLeadSeconds = 1.2f;
         [SerializeField, Range(0.1f, 1f)] private float minTimeScale = 0.4f;
         [SerializeField] private bool slowMotionEnabled = true;
 
         private bool _tense;
         private float _intensity;
         private float _predictedFinishTime;
+        private float _predictedFirstEntry;
         private float _drumTimer;
 
         public bool IsTense => _tense;
@@ -80,6 +83,7 @@ namespace MarbleSync.Gameplay
             _tense = spread < threshold;
             _intensity = _tense ? Mathf.Clamp01(1f - spread / threshold) : 0f;
             _predictedFinishTime = predicted.FinishStep * controller.Sim.Dt;
+            _predictedFirstEntry = first;
         }
 
         private void OnAttemptFinished(AttemptRecord record)
@@ -98,19 +102,24 @@ namespace MarbleSync.Gameplay
 
         private void Update()
         {
-            bool running = controller.Phase == AttemptPhase.Running;
-            if (!running || !_tense)
+            AttemptPhase phase = controller.Phase;
+            bool nearRamp = phase == AttemptPhase.Running && _tense
+                            && controller.Sim.Time >= _predictedFirstEntry - drumLeadSeconds;
+
+            if (nearRamp || phase == AttemptPhase.Finished)
             {
-                if (controller.Phase != AttemptPhase.Finished)
-                {
-                    gameCamera.Frame(controller.LevelBounds(), false);
-                }
-                return;
+                // Keep every marble and the whole seesaw in frame, so the final rush stays on screen.
+                gameCamera.Frame(FinishFocus(), false);
+            }
+            else
+            {
+                gameCamera.Frame(controller.LevelBounds(), false);
             }
 
-            Bounds focus = controller.ActiveMarbleBounds();
-            focus.Encapsulate(controller.Level.SeesawStart);
-            gameCamera.Frame(focus, false);
+            if (!nearRamp)
+            {
+                return;
+            }
 
             _drumTimer -= Time.unscaledDeltaTime;
             if (_drumTimer <= 0f)
@@ -125,6 +134,18 @@ namespace MarbleSync.Gameplay
                 float slow = remaining < slowMotionLead ? Mathf.Lerp(1f, minTimeScale, _intensity) : 1f;
                 Time.timeScale = slow;
             }
+        }
+
+        private Bounds FinishFocus()
+        {
+            LevelDefinition level = controller.Level;
+            Bounds focus = controller.ActiveMarbleBounds();
+            for (int lane = 0; lane < level.MarbleCount; lane++)
+            {
+                focus.Encapsulate(level.SeesawLaneStart(lane));
+                focus.Encapsulate(level.SeesawLaneEnd(lane));
+            }
+            return focus;
         }
     }
 }

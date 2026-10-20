@@ -80,6 +80,22 @@ namespace MarbleSync.Gameplay
 
         public bool IsReplay => Phase == AttemptPhase.Replay;
 
+        /// <summary>Holding is only required mid-attempt while it can still succeed; otherwise restart is instant.</summary>
+        public bool RestartNeedsHold => Phase == AttemptPhase.Running && !AlreadyLost();
+
+        private bool AlreadyLost()
+        {
+            for (int i = 0; i < _sim.MarbleCount; i++)
+            {
+                MarbleStatus s = _sim.GetMarble(i).Status;
+                if (s == MarbleStatus.Melted || s == MarbleStatus.Blocked)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         private void Start()
         {
             LoadLevel(startLevelIndex);
